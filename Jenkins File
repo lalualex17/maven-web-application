@@ -1,0 +1,27 @@
+node{
+    def mavenhome= tool name: "maven3.6.3"
+    properties([buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '5', daysToKeepStr: '', numToKeepStr: '5')), [$class: 'JobLocalConfiguration', changeReasonComment: ''], pipelineTriggers([pollSCM('* * * * *')])])
+stage('CheckoutCode'){
+    git branch: 'development', credentialsId: '3b3ffd34-0f8c-4e26-838e-2078a3b12acb', url: 'https://github.com/lalualex17/maven-web-application.git'
+}
+stage('Build'){
+ sh "${mavenhome}/bin/mvn clean package"
+}
+stage('sonarqube report'){
+    sh "${mavenhome}/bin/mvn sonar:sonar"
+}
+stage('upload artifact in nexus'){
+    sh "${mavenhome}/bin/mvn deploy"
+}
+stage('upload to tomacat server'){
+    sshagent(['4885eeca-8d37-46fe-a809-bad9c3834375']) {
+    sh "scp -o strictHostKeyChecking=no target/maven-web-application.war ec2-user@65.2.78.6:/opt/apache-tomcat-9.0.46/webapps"
+    }
+    }
+stage('send email notification'){
+ emailext body: '''Build is over
+
+Regards,
+Lalualex''', subject: 'Build is over', to: 'lalualex.17@gmail.com'   
+}
+}
