@@ -21,7 +21,6 @@ pipeline{
                 sh "mvn clean package"
             }
         }
-        
         stage('sonarqubereport'){
             steps{
                 sh "mvn clean sonar:sonar"
@@ -40,8 +39,7 @@ pipeline{
             }
         }
         }
-        
-    post{
+   post{
         success{
             emailext body: '''Build is over - success!!
 
