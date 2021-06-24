@@ -1,6 +1,9 @@
 pipeline{
-    agent any
-    triggers{
+  //agent any
+   agent{
+   label 'node2'
+   }
+   triggers{
         pollSCM('* * * * *')
     }
     options{
