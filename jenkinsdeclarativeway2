@@ -1,0 +1,59 @@
+pipeline{
+    agent any
+    triggers{
+        pollSCM('* * * * *')
+         }
+    options{
+        timestamps()
+        buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '5', daysToKeepStr: '', numToKeepStr: '5'))
+    }
+         tools{
+         maven  "maven3.6.3"
+         }
+        stages{
+            stage('checkoutcode'){
+                steps{
+                    git branch: 'development', credentialsId: '3b3ffd34-0f8c-4e26-838e-2078a3b12acb', url: 'https://github.com/lalualex17/maven-web-application.git'
+                }
+            }
+            stage('Build'){
+                steps{
+                    sh "mvn clean package"
+                }                
+            }
+            stage('sonarqubereport'){
+                steps{
+                    sh "mvn clean sonar:sonar"
+                }
+            }
+            stage('upload artifact to nexus'){
+                steps{
+                    sh "mvn clean deploy"
+                }
+            }
+            stage('deploy to tomcat'){
+                steps{
+                      sshagent(['59564809-f72c-4058-89ba-4878c5ca1322']) {
+                sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@3.7.55.183:/opt/apache-tomcat-9.0.46/webapps"
+            }
+        }
+    }
+        }
+    post{
+        success{
+            emailext body: '''Build done - success
+
+
+             Regads,
+             Lalu Alex''', subject: 'Build is done!! - success', to: 'lalualex.17@gmail.com'
+            
+        }
+        failure{emailext body: '''Build done - failure
+
+
+              Regads,
+              Lalu Alex''', subject: 'Build is done!! - failure', to: 'lalualex.17@gmail.com'
+            
+        }
+    }
+    }
